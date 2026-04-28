@@ -28,3 +28,20 @@ con.execute("PRAGMA threads=4")
 start = time.time()
 con.execute("SELECT SUM(i) FROM range(10000000) t(i)").fetchall()
 print("4 Threads:", time.time() - start)
+
+
+for size in [1000000, 5000000, 10000000]:
+    start = time.time()
+    con.execute(f"SELECT SUM(i) FROM range({size}) t(i)").fetchall()
+    print(f"Size {size}:", time.time() - start)
+
+
+for size in [100000, 500000, 1000000]:
+    start = time.time()
+    con.execute(f"""
+    SELECT *
+    FROM range({size}) t1(i)
+    JOIN range({size}) t2(j)
+    ON t1.i = t2.j
+    """).fetchall()
+    print(f"Join size {size}:", time.time() - start)

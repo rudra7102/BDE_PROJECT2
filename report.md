@@ -162,23 +162,65 @@ Tradeoff:
 
 ---
 
-## 🧪 Experiments
+###  Experiments
 
 ### Experiment Setup
-- Used DuckDB Python API
-- Tested aggregation, join, and parallel execution
+    -Used DuckDB Python API
+    -Tested aggregation, join, parallel execution
+    -Also tested behavior with increasing data size and join scaling
 
----
+📊 Experiment 1: Basic Performance
 
-### Output
-
+Output
 Aggregation Time: 0.0275 sec  
 Join Time: 0.2867 sec  
 
 1 Thread: 0.0288 sec  
 4 Threads: 0.0277 sec  
+Observation
+Aggregation is very fast
+Join is much slower compared to aggregation
+Increasing threads shows very little improvement
+Analysis
+Aggregation is fast due to columnar storage and vectorized execution
+Join is slower because it requires matching rows and building hash tables
+Parallelism does not help much here because the dataset is small and overhead dominates
 
----
+📊 Experiment 2: Data Size Scaling
+Observation
+As data size increases, execution time increases
+Analysis
+Query performance depends on amount of data scanned
+More data → more computation → higher execution time
+Shows DuckDB follows near-linear scaling for simple aggregation
+
+### Output
+Size 1000000: 0.0044  
+Size 5000000: 0.0259  
+Size 10000000: 0.0431  
+
+📊 Experiment 3: Join Scaling
+Observation
+Join time increases much faster than aggregation
+Analysis
+Join operations require:
+Building hash tables
+Matching rows
+This makes joins computationally expensive
+Performance degrades faster with increasing data size
+
+### Output
+Join size 100000: 0.0364  
+Join size 500000: 0.1964  
+Join size 1000000: 0.3685  
+
+📊 Experiment 4: Parallelism
+Observation
+Increasing threads gives limited improvement
+Analysis
+Small workloads do not fully utilize multiple threads
+Thread management overhead reduces benefit
+Parallelism is more effective for larger datasets
 
 ### Observation
 
@@ -196,11 +238,19 @@ Join Time: 0.2867 sec
 
 ---
 
+### Execution Operators
+
+DuckDB uses physical operators such as:
+- PhysicalHashAggregate → used for aggregation
+- PhysicalHashJoin → used for joins
+- PhysicalRangeScan → used for scanning data
+
 ## ⚠️ Failure Analysis
 
 ### 1. Large Data Size
 - Execution time increases as data grows
-- Memory becomes bottleneck
+-When data exceeds RAM, DuckDB performs disk spilling.
+ Disk access is slower than memory, causing performance degradation.
 
 ---
 
